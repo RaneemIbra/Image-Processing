@@ -1,5 +1,5 @@
-# Student_Name1, Student_ID1
-# Student_Name2, Student_ID2
+# Raneem Ibraheem, 212920896
+# Selan Abu Saleh, 212111439
 
 # Please replace the above comments with your names and ID numbers in the same format.
 
