@@ -64,11 +64,12 @@ def get_bar_height(image, idx):
 
 
 # Sections a, b
+# small adjustment just to be able to read the directories
+images, names = read_dir('./HW1/data')
+numbers, numNames = read_dir('./HW1/numbers')
 
-images, names = read_dir('data')
-numbers, _ = read_dir('numbers')
-
-cv2.imshow(names[0], images[0]) 
+cv2.imshow(names[0], images[0])
+cv2.imshow(numNames[2], numbers[2])
 cv2.waitKey(0)
 cv2.destroyAllWindows() 
 exit()
