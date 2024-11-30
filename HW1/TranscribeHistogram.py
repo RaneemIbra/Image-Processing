@@ -55,18 +55,58 @@ def get_bar_height(image, idx):
 # Sections c, d
 # Remember to uncomment compare_hist before using it!
 
-# def compare_hist(src_image, target):
-	# Your code goes here
-	
-	# return True
-	# or
-	# return False
+def compare_hist(src_image, target): 
+    windows = np.lib.stride_tricks.sliding_window_view(src_image, (target.shape[0], target.shape[1]))
+    visualized_image = cv2.cvtColor(src_image.copy(), cv2.COLOR_GRAY2BGR)
+    for y in range(30, 50):
+        for x in range(100, 145):
+            window = windows[x, y]
+            top_left = (y, x)
+            bottom_right = (y + target.shape[1], x + target.shape[0])
+            cv2.rectangle(visualized_image, top_left, bottom_right, (0, 255, 0), 1)
+            cv2.imshow("Sliding Window Progress", visualized_image)
+            cv2.waitKey(1)
+            window_hist = cv2.calcHist([window], [0], None, [256], [0, 256]).flatten()
+            target_hist = cv2.calcHist([target], [0], None, [256], [0, 256]).flatten()
+            window_cumsum = np.cumsum(window_hist)
+            target_cumsum = np.cumsum(target_hist)
+            emd = np.sum(np.abs(window_cumsum - target_cumsum))
+            if emd < 260:
+                print(f"Match found at x={x}, y={y} with EMD={emd:.2f}")
+                cv2.destroyWindow("Sliding Window Progress")
+                return True
+            
+    print("No match found within the corrected threshold.")
+    cv2.destroyWindow("Sliding Window Progress")
+    return False
 
 
 # Sections a, b
-# small adjustment just to be able to read the directories
+
+# Main processing loop
 images, names = read_dir('./HW1/data')
 numbers, numNames = read_dir('./HW1/numbers')
+
+recognized_number = None
+
+# Extract the digits and sort the indices in descending order
+digit_indices = sorted(range(len(numbers)), key=lambda i: int(numNames[i][0]), reverse=True)
+
+# Iterate through the sorted indices
+for idx in digit_indices:
+    digit = int(numNames[idx][0])  # Extract the digit from the filename
+    number = numbers[idx]  # Get the corresponding number image
+    
+    # Process numbers in descending order
+    if compare_hist(images[6], number):
+        recognized_number = digit
+        break
+
+if recognized_number is not None:
+    print(f"Histogram {names[1]} recognized number: {recognized_number}")
+else:
+    print(f"Histogram {names[1]} did not recognize any number below the threshold.")
+
 
 cv2.imshow(names[0], images[0])
 cv2.imshow(numNames[2], numbers[2])
