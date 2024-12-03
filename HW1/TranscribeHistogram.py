@@ -56,6 +56,14 @@ def get_bar_height(image, idx):
 # Remember to uncomment compare_hist before using it!
 
 def compare_hist(src_image, target):
+    """
+    compares a target histogram to sliding windows histograms in the source image
+    arguments:
+        source image
+        target_image
+    returns:
+        True if a match is found, False otherwise
+    """
     windows = np.lib.stride_tricks.sliding_window_view(src_image,
                                                         (target.shape[0], target.shape[1]))
     target_hist = cv2.calcHist([target], [0], None, [256], [0, 256]).flatten()
@@ -68,40 +76,72 @@ def compare_hist(src_image, target):
     return False
 
 def get_EMD_Value(first_histogram, second_histogram):
+    """
+    calculates the EMD between two histograms
+    arguments:
+        first histogram
+        second histogram
+    returns:
+        the EMD value
+    """
     first_cumulative_histogram = np.cumsum(first_histogram)
     second_cumulative_histogram = np.cumsum(second_histogram)
     return np.sum(np.abs(first_cumulative_histogram - second_cumulative_histogram))
 
 def get_binary_images(images):
-    res = []
+    """
+    converts grayscale images to binary using thresholding
+    arguments:
+        array of grayscale images
+    returns:
+        list of binary images
+    """
+    binary_images = []
     for img in images: 
         _, binary_image = cv2.threshold(img, 220, 255, cv2.THRESH_BINARY)
-        res.append(binary_image)
-    return res
+        binary_images.append(binary_image)
+    return binary_images
 
-def get_heights_list(images):
-    image_list = []
-    for img in images:
-        bar_heights = []
-        for bin_id in range(10):
-            height = get_bar_height(img, bin_id)
-            bar_heights.append(height)
-        image_list.append(bar_heights)
-    return image_list
+def calculate_all_bar_heights(binary_images):
+    """
+    calculates the heights of all bars in all histogram images
+    arguments:
+        list of binary histogram images
+    returns:
+        list of bar heights for each image
+    """
+    bar_height_list = []
+    for image in binary_images:
+        bar_heights = [get_bar_height(image, bin_index) for bin_index in range(10)]
+        bar_height_list.append(bar_heights)
+    return bar_height_list
 
-def get_highest_bar(images, numbers):
-    highest_bar_list = []
-    for index, image in enumerate(images):
-        recognized_digit = None
+def find_highest_bar(images, numbers):
+    """
+    finds the highest bar for each histogram image
+    arguments:
+        array of histogram images
+        array of number images
+    returns:
+        list of recognized digits for each histogram
+    """
+    recognized_digits = []
+    for image in images:
         for digit in range(9, -1, -1):
-            result = compare_hist(image, numbers[digit])
-            if result:
-                recognized_digit = digit
-                highest_bar_list.append(recognized_digit)
+            if compare_hist(image, numbers[digit]):
+                recognized_digits.append(digit)
                 break
-    return highest_bar_list
+    return recognized_digits
 
-def calc_heights(max_students, bar_heights):
+def calculate_students_numbers(max_students, bar_heights):
+    """
+    calculates the number of students for each bin based on bar heights
+    arguments:
+        list of maximum student counts for each histogram
+        list of bar heights for each histogram
+    returns:
+        list: List of student numbers per bar for each histogram
+    """
     res = []
     for i in range(7):
         students_per_bin = []
@@ -116,14 +156,14 @@ def calc_heights(max_students, bar_heights):
 images, names = read_dir('./HW1/data')
 numbers, numNames = read_dir('./HW1/numbers')
 
-highest_bar = get_highest_bar(images,numbers)  
+highest_bars = find_highest_bar  (images,numbers)  
 quantized_images = quantization(images, n_colors=4)
 binary_images = get_binary_images(quantized_images)
-bar_heights = get_heights_list(binary_images)
-heights = calc_heights(highest_bar, bar_heights)
+bar_heights = calculate_all_bar_heights(binary_images)
+students_bar_heights = calculate_students_numbers(highest_bars, bar_heights)
 
 for i in range(7):
-    print(f'Histogram {names[i]} gave {heights[i]}')
+    print(f'Histogram {names[i]} gave {students_bar_heights[i]}')
  
 cv2.waitKey(0)
 cv2.destroyAllWindows() 
