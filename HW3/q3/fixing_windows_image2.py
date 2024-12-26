@@ -1,3 +1,6 @@
+# Raneem Ibraheem, 212920896
+# Selan Abu Saleh, 212111439
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
