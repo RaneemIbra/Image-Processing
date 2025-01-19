@@ -18,7 +18,8 @@ def scale_down(image, resize_ratio):
 	# get the image dimensions
 	rows, columns = fourierTransform.shape
 	# where to start cropping the image
-	cropRow = int((rows * (1 - resize_ratio)) // 2), cropCol = int((columns * (1 - resize_ratio)) // 2)
+	cropRow = int((rows * (1 - resize_ratio)) // 2)
+	cropCol = int((columns * (1 - resize_ratio)) // 2)
 	# crop the image
 	croppedImage = fourierTransform[cropRow:cropRow + int(rows * resize_ratio), cropCol:cropCol + int(columns * resize_ratio)]
 	# fix the values of the cropped image
@@ -43,8 +44,30 @@ def scale_up(image, resize_ratio):
 
 def ncc_2d(image, pattern):
 	# Your code goes here
-	return
+	# get the image and pattern dimensions
+	imgHeight, imgWidth = image.shape
+	patternHeight, patternWidth = pattern.shape
+	# calculate the output dimensions
+	outputHeight, outputWidth = imgHeight - patternHeight + 1, imgWidth - patternWidth + 1
+	# initialize the output matrix
+	NCCout = np.zeros((outputHeight, outputWidth))
+	# calculate the mean of the pattern
+	patternMean = np.mean(pattern)
+	for i in range(outputHeight):
+		for j in range(outputWidth):
+			# get the current window
+			window = image[i:i + patternHeight, j:j + patternWidth]
+			# calculate the mean of the window
+			windowMean = np.mean(window)
+			# calculate the cross-correlation
+			NCCout[i, j] = np.sum((window - windowMean) * (pattern - patternMean)) / (np.sqrt(np.sum((window - windowMean) ** 2)) * np.sqrt(np.sum((pattern - patternMean) ** 2)))
+	return NCCout
 
+# a function to threshold the NCC values
+def Thresholding(NCC, threshold):
+	exceeding = NCC > threshold
+	indices = np.argwhere(exceeding)
+	return indices
 
 def display(image, pattern):
 	
@@ -99,13 +122,15 @@ display(image, pattern)
 
 ############# Students #############
 
-image_scaled = # Your code goes here. If you choose not to scale the image, just remove it.
-pattern_scaled =  # Your code goes here. If you choose not to scale the pattern, just remove it.
+image_scaled = scale_up(image, 1.43)
+image_scaled = cv2.GaussianBlur(image_scaled, (17, 17), 9) + 128
+pattern_scaled =  scale_down(pattern, 0.82)
+pattern_scaled = cv2.GaussianBlur(pattern_scaled, (27, 27), 4) + 128
 
 display(image_scaled, pattern_scaled)
 
-ncc = # Your code goes here
-real_matches = # Your code goes here
+ncc = ncc_2d(image_scaled, pattern_scaled)
+real_matches = (Thresholding(ncc, 0.441)) * (1 / 1.43)
 
 ######### DONT CHANGE THE NEXT TWO LINES #########
 real_matches[:,0] += pattern_scaled.shape[0] // 2			# if pattern was not scaled, replace this with "pattern"
@@ -117,17 +142,19 @@ draw_matches(image, real_matches, pattern_scaled.shape)	# if pattern was not sca
 
 
 
-
+CURR_IMAGE = "thecrew"
+image = cv2.imread(f'{CURR_IMAGE}.jpg')
+image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 ############# Crew #############
 
-image_scaled = # Your code goes here. If you choose not to scale the image, just remove it.
-pattern_scaled =  # Your code goes here. If you choose not to scale the pattern, just remove it.
+image_scaled = scale_up(image, 1.35)
+pattern_scaled =  scale_down(pattern, 0.3)
 
 display(image_scaled, pattern_scaled)
 
-ncc = # Your code goes here
-real_matches = # Your code goes here
+ncc = ncc_2d(image_scaled, pattern_scaled)
+real_matches = (Thresholding(ncc, 0.45)) * (1 / 1.35)
 
 ######### DONT CHANGE THE NEXT TWO LINES #########
 real_matches[:,0] += pattern_scaled.shape[0] // 2			# if pattern was not scaled, replace this with "pattern"
