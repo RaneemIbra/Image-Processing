@@ -122,15 +122,15 @@ display(image, pattern)
 
 ############# Students #############
 
-image_scaled = scale_up(image, 1.43)
-image_scaled = cv2.GaussianBlur(image_scaled, (17, 17), 9) + 128
-pattern_scaled =  scale_down(pattern, 0.82)
-pattern_scaled = cv2.GaussianBlur(pattern_scaled, (27, 27), 4) + 128
+image_scaled = scale_up(image, 1.45)
+image_scaled = image_scaled - cv2.GaussianBlur(image_scaled, (15, 15), 7) + 128
+pattern_scaled =  scale_down(pattern, 0.8)
+pattern_scaled = pattern_scaled - cv2.GaussianBlur(pattern_scaled, (19, 19), 5) + 128
 
 display(image_scaled, pattern_scaled)
 
 ncc = ncc_2d(image_scaled, pattern_scaled)
-real_matches = (Thresholding(ncc, 0.441)) * (1 / 1.43)
+real_matches = 	Thresholding(ncc, 0.48) * (1 / 1.45)
 
 ######### DONT CHANGE THE NEXT TWO LINES #########
 real_matches[:,0] += pattern_scaled.shape[0] // 2			# if pattern was not scaled, replace this with "pattern"
@@ -154,7 +154,7 @@ pattern_scaled =  scale_down(pattern, 0.3)
 display(image_scaled, pattern_scaled)
 
 ncc = ncc_2d(image_scaled, pattern_scaled)
-real_matches = (Thresholding(ncc, 0.45)) * (1 / 1.35)
+real_matches = Thresholding(ncc, 0.45) * (1 / 1.35)
 
 ######### DONT CHANGE THE NEXT TWO LINES #########
 real_matches[:,0] += pattern_scaled.shape[0] // 2			# if pattern was not scaled, replace this with "pattern"
