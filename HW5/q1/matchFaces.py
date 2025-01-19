@@ -1,5 +1,5 @@
-# Student_Name1, Student_ID1
-# Student_Name2, Student_ID2
+# Raneem Ibraheem, 212920896
+# Selan Abu Saleh, 212111439
 
 # Please replace the above comments with your names and ID numbers in the same format.
 
@@ -13,12 +13,37 @@ warnings.filterwarnings("ignore")
 
 def scale_down(image, resize_ratio):
 	# Your code goes here
+	# convert the image to frequency domain
+	fourierTransform = fftshift(fft2(image))
+	# get the image dimensions
+	rows, columns = fourierTransform.shape
+	# where to start cropping the image
+	cropRow = int((rows * (1 - resize_ratio)) // 2), cropCol = int((columns * (1 - resize_ratio)) // 2)
+	# crop the image
+	croppedImage = fourierTransform[cropRow:cropRow + int(rows * resize_ratio), cropCol:cropCol + int(columns * resize_ratio)]
+	# fix the values of the cropped image
+	croppedImage = croppedImage * resize_ratio ** 2
+	# return the cropped image in spatial domain
+	return np.abs(ifft2(ifftshift(croppedImage)))
 
 def scale_up(image, resize_ratio):
 	# Your code goes here
+	# convert the image to frequency domain
+	fourierTransform = fftshift(fft2(image))
+	# get the image dimensions
+	rows, columns = fourierTransform.shape
+	additionalRows, additionalColumns = int(rows * (resize_ratio - 1)) // 2, int(columns * (resize_ratio - 1)) // 2
+	# create a zero matrix with the new dimensions
+	paddedImage = np.zeros(((additionalRows * 2) + rows, (additionalColumns * 2) + columns), dtype=complex)
+	# copy the original image to the new matrix
+	paddedImage[additionalRows: additionalRows + rows, additionalColumns:additionalColumns + columns] = fourierTransform
+	paddedImage = paddedImage * resize_ratio ** 2
+	# return the padded image in spatial domain
+	return np.abs(np.real(ifft2(ifftshift(paddedImage))))
 
 def ncc_2d(image, pattern):
 	# Your code goes here
+	return
 
 
 def display(image, pattern):
