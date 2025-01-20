@@ -14,54 +14,60 @@ warnings.filterwarnings("ignore")
 def scale_down(image, resize_ratio):
 	# Your code goes here
 	# convert the image to frequency domain
-	fourierTransform = fftshift(fft2(image))
-	# get the image dimensions
-	rows, columns = fourierTransform.shape
-	# where to start cropping the image
-	cropRow = int((rows * (1 - resize_ratio)) // 2)
-	cropCol = int((columns * (1 - resize_ratio)) // 2)
-	# crop the image
-	croppedImage = fourierTransform[cropRow:cropRow + int(rows * resize_ratio), cropCol:cropCol + int(columns * resize_ratio)]
-	# fix the values of the cropped image
-	croppedImage = croppedImage * resize_ratio ** 2
-	# return the cropped image in spatial domain
-	return np.abs(ifft2(ifftshift(croppedImage)))
+	freq_image = fftshift(fft2(image))
+    # calculate cropping indices
+	rows, cols = freq_image.shape
+	crop_start_row = int((1 - resize_ratio) * rows // 2)
+	crop_start_col = int((1 - resize_ratio) * cols // 2)
+	crop_end_row = crop_start_row + int(rows * resize_ratio)
+	crop_end_col = crop_start_col + int(cols * resize_ratio)
+    # crop and scale the frequency coefficients
+	cropped_freq = freq_image[crop_start_row:crop_end_row, crop_start_col:crop_end_col] * (resize_ratio ** 2)
+    
+    # transform back to the spatial domain
+	return np.abs(ifft2(ifftshift(cropped_freq)))
 
 def scale_up(image, resize_ratio):
 	# Your code goes here
 	# convert the image to frequency domain
-	fourierTransform = fftshift(fft2(image))
-	# get the image dimensions
-	rows, columns = fourierTransform.shape
-	additionalRows, additionalColumns = int(rows * (resize_ratio - 1)) // 2, int(columns * (resize_ratio - 1)) // 2
-	# create a zero matrix with the new dimensions
-	paddedImage = np.zeros(((additionalRows * 2) + rows, (additionalColumns * 2) + columns), dtype=complex)
-	# copy the original image to the new matrix
-	paddedImage[additionalRows: additionalRows + rows, additionalColumns:additionalColumns + columns] = fourierTransform
-	paddedImage = paddedImage * resize_ratio ** 2
-	# return the padded image in spatial domain
-	return np.abs(np.real(ifft2(ifftshift(paddedImage))))
+	freq_image = fftshift(fft2(image))
+    # calculate dimensions for padding
+	rows, cols = freq_image.shape
+	pad_rows = int((resize_ratio - 1) * rows // 2)
+	pad_cols = int((resize_ratio - 1) * cols // 2)
+    # create a zero-padded frequency array
+	padded_freq = np.zeros((rows + 2 * pad_rows, cols + 2 * pad_cols), dtype=complex)
+	padded_freq[pad_rows:pad_rows + rows, pad_cols:pad_cols + cols] = freq_image * (resize_ratio ** 2)
+    # Transform back to the spatial domain
+	return np.abs(ifft2(ifftshift(padded_freq)))
 
 def ncc_2d(image, pattern):
 	# Your code goes here
 	# get the image and pattern dimensions
-	imgHeight, imgWidth = image.shape
-	patternHeight, patternWidth = pattern.shape
-	# calculate the output dimensions
-	outputHeight, outputWidth = imgHeight - patternHeight + 1, imgWidth - patternWidth + 1
-	# initialize the output matrix
-	NCCout = np.zeros((outputHeight, outputWidth))
-	# calculate the mean of the pattern
-	patternMean = np.mean(pattern)
-	for i in range(outputHeight):
-		for j in range(outputWidth):
-			# get the current window
-			window = image[i:i + patternHeight, j:j + patternWidth]
-			# calculate the mean of the window
-			windowMean = np.mean(window)
-			# calculate the cross-correlation
-			NCCout[i, j] = np.sum((window - windowMean) * (pattern - patternMean)) / (np.sqrt(np.sum((window - windowMean) ** 2)) * np.sqrt(np.sum((pattern - patternMean) ** 2)))
-	return NCCout
+    img_height, img_width = image.shape
+    pat_height, pat_width = pattern.shape
+    # calculate output dimensions for the NCC result
+    output_height = img_height - pat_height + 1
+    output_width = img_width - pat_width + 1
+    # initialize the NCC result array
+    ncc_result = np.zeros((output_height, output_width))
+    # precompute the mean and normalized pattern
+    pattern_mean = np.mean(pattern)
+    normalized_pattern = pattern - pattern_mean
+    pattern_norm = np.sqrt(np.sum(normalized_pattern ** 2))
+    # compute NCC for each window in the image
+    for i in range(output_height):
+        for j in range(output_width):
+            # extract the current window from the image
+            window = image[i:i + pat_height, j:j + pat_width]
+            # compute mean and normalized window
+            window_mean = np.mean(window)
+            normalized_window = window - window_mean
+            window_norm = np.sqrt(np.sum(normalized_window ** 2))
+            # calculate the NCC value
+            ncc_result[i, j] = np.sum(normalized_window * normalized_pattern) / (window_norm * pattern_norm)
+
+    return ncc_result
 
 # a function to threshold the NCC values
 def Thresholding(NCC, threshold):
