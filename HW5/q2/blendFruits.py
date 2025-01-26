@@ -82,7 +82,7 @@ def blend_pyramids(levels):
 			mask[:, column] = 0.9 - 0.9 * i / (2 * (levels - level))
 
 		# Step 5: Blend the two pyramids (orange and apple) at the current level using the mask
-		blended_level = pyr_orange[level] * (1 - mask) + pyr_apple[level] * mask
+		blended_level = pyr_orange[level] * (mask) + pyr_apple[level] * (1-mask)
 
 		# Step 6: Append the blended level to the list of blended pyramid levels
 		blend_pyramid.append(blended_level)
